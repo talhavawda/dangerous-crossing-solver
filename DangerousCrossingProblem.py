@@ -181,6 +181,7 @@ class DangerousCrossing(Problem):
 		Constraints:
 			1. Each person has a travel time (in minutes) to cross the bridge
 			2. No more than two people can cross the bridge at one time
+				- Thus either 1 or 2 persons cross the bridge at a time (0 persons crossing results in the same State, so we dont count it)
 			3. If two people are on the bridge together, they must travel at the pace of the slower person
 			4. There is 1 flashlight and each party (of max 2 people) needs to cross the bridge with the flashlight
 
@@ -271,6 +272,8 @@ class DangerousCrossing(Problem):
 
 	def actions(self, state):
 		"""
+			Implmenting this abstract method from the superclass Problem
+
 			Return the actions that can be executed in the given state.
 
 			An action of this Dangerous Crossing Problem is either 1 or 2 people cross from the side of
@@ -317,6 +320,8 @@ class DangerousCrossing(Problem):
 
 	def result(self, state: list, action: list):
 		"""
+			Implmenting this abstract method from the superclass Problem
+
 			Return the State that results from executing/performing the specified action in the specified state
 
 			The Resultant State has the flashlight and the 1 or 2 persons moved from the side of
@@ -325,11 +330,11 @@ class DangerousCrossing(Problem):
 			-	if they on LEFT then move to RIGHT
 			-	if they on RIGHT then move to LEFT
 
-			Remember that state is a list of integer bits (of size n+1) representing the location of the n people and the flashlight
+			Remember that state is a list of integer bits (of size n+1) representing the location of the flashlight and the n people
 			Remeber that an element in the action list represents a person [their number/ID] (which in a state representation, is an index)
 
 			:param state: a State in the State Space that the action is applied to
-			:param action: a list of either 1 or 2 persons crossing to the other side of the bridge
+			:param action: a list of either 1 or 2 persons (their index/number) crossing to the other side of the bridge
 			:return: the resulting state from executing the action on this state
 		"""
 
@@ -355,6 +360,85 @@ class DangerousCrossing(Problem):
 		return resultState
 
 
+	def action_cost(self, action):
+		"""
+			The cost of performing the specified action
+			i.e. The time taken for 1 or 2 persons (and the flashlight) to cross from one side of the bridge to the other
+
+			The Action Cost (Crossing Time) of this Dangerous Crossing Problem is independent of the actual/specific
+			state the action is applied to and the specific resultant state, so we dont need to have the states as parameters
+				- 	The Action Cost (Crossing Time) of an action is solely dependent on the action - which persons are
+					crossing from one side of the bridge to the other
+						-	The cost (crossing time) from crossing from LEFT to RIGHT is the same as crossing from
+							RIGHT to LEFT
+
+
+			Remember Problem Constraint 3:
+				If two people are on the bridge together, they must travel at the pace of the slower person
+					i.e. cost = MAX(crossingTime[i], crossingTime[j])
+
+
+			:param action: 	The action executed/performed on the state
+							i.e. A list of either 1 or 2 persons (their index) crossing to the other side of the bridge
+
+			:return:		The cost of performing the specified action on the specified state
+							i.e. The time taken for 1 or 2 persons (and the flashlight) to cross from one side
+							of the bridge to the other
+		"""
+
+		if len(action) == 1:
+
+			# Only 1 person is crossing
+			personI = action[0]
+			return self.crossingTime[personI]
+
+		elif len(action) == 2:
+
+			# 2 people are crossing
+			personI = action[0]
+			personJ = action[1]
+			ctPersonI = self.crossingTime[personI] # the Crossing Time of the first person
+			ctPersonJ = self.crossingTime[personJ] # the Crossing Time of the second person
+			return max(ctPersonI, ctPersonJ)
+
+
+
+	def path_cost(self, c, state1, action, state2):
+		"""
+			The path cost is the cost from starting off at the initial state and reaching the current state (state2)
+				i.e. The time that has elapsed since the people started crossing the bridge till where they
+				(and the flashlight) are currently located
+
+			We are given the path cost to state1, so we just have to add to it the cost of performing the action (on state1
+			to get to state2) - i.e PathCost(state2) = PathCost(state1) + ActionCost(state1 + action -> state2)
+				-	The Action Cost is independent of the states (see the doc of actionCost()) but I've kept the
+					state parameters in the parameter list (even though we wont need them for the Path Cost of this
+					Dangerous Crossing Problem) as this function is meant to override the one in Problem
+
+			I'm overriding this function as the super function (defined in Problem) has the step cost as 1
+
+
+			:param c: 		The cost to get to state1
+							i.e. The elapsed time before this action was executed
+
+			:param state1:	A State in the State Space that the action was applied to
+							i.e. the location of the flashlight and the n people
+							represented as a list of integer bits (of size n+1)
+
+			:param action: 	The action applied to state1
+							i.e. (A list of) Either 1 or 2 persons crossing from one side of the bridge to the otherside
+
+			:param state2: 	The Resultant State in the State Space from the action being applied to state 1
+							i.e. the location of the flashlight and the n people after 1 or 2 persons and the flashlight
+								have crossed the bridge
+
+			:return:		The cost of the path that arrives at state2 by applying action to state1
+							i.e. The time that has elapsed since the people started crossing the bridge
+		"""
+
+		return c + self.action_cost(action)
+
+
 
 	def goal_test(self, state):
 		"""
@@ -371,9 +455,6 @@ class DangerousCrossing(Problem):
 		"""
 
 		return self.goal == state
-
-	def value(self, state):
-		pass
 
 
 
@@ -413,8 +494,9 @@ def main():
 	actions = p.actions(p.initial)
 
 	for action in actions:
-		print("action:\t", action)
-		print("new state: ", p.result(p.initial, action))
+		print("action:\t\t", action)
+		print("Action cost:\t", p.action_cost(action))
+		print("new state:\t", p.result(p.initial, action))
 		print()
 
 	#print(p.actions([0,0,1,0,1]))
