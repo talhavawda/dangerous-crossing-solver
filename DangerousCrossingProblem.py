@@ -206,7 +206,7 @@ class DangerousCrossing(Problem):
 	"""
 
 	# Class Variables
-	LEFT = 0	# represents the left-hand side of the bridge
+	LEFT  = 0	# represents the left-hand side of the bridge
 	RIGHT = 1	# represents the right-hand side of the bridge
 
 
@@ -296,28 +296,64 @@ class DangerousCrossing(Problem):
 			they can cross with another person who is also on their side (the side of the flashlight).
 			-	So we add an action for this person crossing by themselves, and also actions for them crossing
 				with other people (each of these actions is them crossing with one of these other 
-				people, making 2 of the crossing the bridge)
+				people, making 2 of them crossing the bridge)
 				
-			
-			
-			Note that person i and person j crossing is the same action as person j and person i crossing, and 
-			we only want to add this action once so when determining the people that person i can cross with 
+			Note that person i and person j crossing the bridge is the same action as person j and person i crossing, 
+			and we only want to add this action once so when determining the people that person i can cross with 
 			we look at people who come after this person i (a person j where j > i) 
 		"""
-		for person in range(1, self.n+1): # exclude the flashlight - only traverse the peoples' locations
-			if state[person] == flashlightLocation: #This person can cross the bridge
-				action = [person] # This person can cross bridge on their own (with the flashlight)
+
+		for personI in range(1, self.n+1): # exclude the flashlight - only traverse the peoples' locations
+			if state[personI] == flashlightLocation: #This person can cross the bridge
+				action = [personI] # This person (person i) can cross bridge on their own (with the flashlight)
 				possibleActions.append(action)
-				for person2 in range(person+1, self.n+1):
-					if state[person2] == flashlightLocation:  # This person (person2) can cross the bridge
-						action = [person, person2] # person can cross the bridge with person2 (and the flashlight)
+				for personJ in range(personI+1, self.n+1):
+					if state[personJ] == flashlightLocation:  # This person (person j) can cross the bridge
+						action = [personI, personJ] # person i can cross the bridge with person j (and the flashlight)
 						possibleActions.append(action)
 
 		return possibleActions
 
 
-	def result(self, state, action):
-		pass
+	def result(self, state: list, action: list):
+		"""
+			Return the State that results from executing/performing the specified action in the specified state
+
+			The Resultant State has the flashlight and the 1 or 2 persons moved from the side of
+			the bridge (either LEFT or RIGHT) that they are currently situated/located at,
+			to the other side of the bridge
+			-	if they on LEFT then move to RIGHT
+			-	if they on RIGHT then move to LEFT
+
+			Remember that state is a list of integer bits (of size n+1) representing the location of the n people and the flashlight
+			Remeber that an element in the action list represents a person [their number/ID] (which in a state representation, is an index)
+
+			:param state: a State in the State Space that the action is applied to
+			:param action: a list of either 1 or 2 persons crossing to the other side of the bridge
+			:return: the resulting state from executing the action on this state
+		"""
+
+		# Initialise resultState
+		resultState = state.copy() # a list of n+1 integer elements (elements = {LEFT, RIGHT})
+
+		flashlightLocation = state[0]
+
+		# The side of the bridge to move to
+		# initialise to the RIGHT side
+		#	i.e. flashlight and persons are moving from LEFT side to RIGHT side (i.e. flashlightLocation == DangerousCrossing.LEFT)
+		moveToSide = DangerousCrossing.RIGHT
+
+		#if flashlight and persons are on the RIGHT side, then they must move to LEFT side
+		if flashlightLocation == DangerousCrossing.RIGHT:
+			moveToSide = DangerousCrossing.LEFT
+
+		# Move the flashlight and persons to the opposite side of the bridge
+		resultState[0] = moveToSide
+		for person in action:
+			resultState[person] = moveToSide
+
+		return resultState
+
 
 
 	def goal_test(self, state):
@@ -364,10 +400,24 @@ def main():
 
 
 	print("hello world")
-	l1 = [0, 1,2,3,4,5]
+	l1 = [0,1,2,3,4,5]
+	l2 = []
+	l2 = l1.copy()
+	l2[1] = 10
+	print(l1)
+	print(l2)
 
+	print()
+	print("test problem")
 	p = DangerousCrossing(4,[1,2,5,8],15)
-	print(p.actions(p.initial))
+	actions = p.actions(p.initial)
+
+	for action in actions:
+		print("action:\t", action)
+		print("new state: ", p.result(p.initial, action))
+		print()
+
+	#print(p.actions([0,0,1,0,1]))
 
 
 main()
