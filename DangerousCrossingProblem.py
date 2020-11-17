@@ -197,11 +197,11 @@ class DangerousCrossing(Problem):
 		LEFT side of the bridge with the aim of crossing over to the RIGHT side of the bridge.
 
 		Thus the Initial State of this problem can be represented as:
-			bridge[i] = 0 for all i = {0, n}	(LEFT = 0)
+			state[i] = 0 for all i = {0, n}	(LEFT = 0)
 		E.g. with n=4: initial = [0,0,0,0,0]
 
 		And the (unique) Goal State of this problem can be represented as:
-			bridge[i] = 1 for all i = {0, n}	(RIGHT = 1)
+			state[i] = 1 for all i = {0, n}	(RIGHT = 1)
 		E.g. with n=4: initial = [1,1,1,1,1]
 	"""
 
@@ -239,28 +239,106 @@ class DangerousCrossing(Problem):
 
 
 			:param n: The number of people crossing the bridge
-			:param crossingTime: A list (of positive integers) denoting the time it takes for each of the n people
+			:param crossingTime: A list (of positive integers) of size n denoting the time it takes for each of the n people
 				to cross from one side of the bridge to the other
 			:param minimumTime: The shortest possible time it takes for all the n people to cross the bridge within the Constraints
 		"""
 
 		# Specify Initial State and Goal State
-		initial: int = []
-		goal: int = []
+		initial = []
+		goal = []
 
 		for i in range(n+1): # i traverses {0, ..., n}
-			initial[i] = DangerousCrossing.LEFT
-			goal[i]= DangerousCrossing.RIGHT
+			initial.append(DangerousCrossing.LEFT)
+			goal.append(DangerousCrossing.RIGHT)
 
 		# Call super constructor
 		super().__init__(initial, goal)
 
 		# Specify fields unique to this Problem
 		crossingTime.sort()
-		dummy = [0]
+		crossingTimeAdjusted = [0]
+		crossingTimeAdjusted.extend(crossingTime)
 
-		self.crossingTime = dummy.extend(crossingTime)
+		self.n = n
+
+		if (n != len(crossingTime)): # Sanity/Validation check
+			self.n = len(crossingTime)
+
+		self.crossingTime = crossingTimeAdjusted
 		self.mimimumTime = minimumTime
+
+
+	def actions(self, state):
+		"""
+			Return the actions that can be executed in the given state.
+
+			An action of this Dangerous Crossing Problem is either 1 or 2 people cross from the side of
+			the bridge (either LEFT or RIGHT) that the flashlight is situated at, to the other side of the bridge
+			(and taking the flashlight with them)
+
+			Thus we represent a single action as a list of integers where each element (an integer) is the person(s)
+			that are crossing the bridge
+
+			Thus the list of actions that is returned is a list of lists (each action is a list)
+
+			:param state: a State in the State Space, a list of integer bits (of size n+1)
+			 				representing the location of the n people and the flashlight
+			:return: a list of actions that can be executed/performed on this state
+		"""
+
+		possibleActions = []
+
+		flashlightLocation = state[0]
+
+		"""
+			If a person is on the side of the flashlight, then they can cross the bridge by themselves or 
+			they can cross with another person who is also on their side (the side of the flashlight).
+			-	So we add an action for this person crossing by themselves, and also actions for them crossing
+				with other people (each of these actions is them crossing with one of these other 
+				people, making 2 of the crossing the bridge)
+				
+			
+			
+			Note that person i and person j crossing is the same action as person j and person i crossing, and 
+			we only want to add this action once so when determining the people that person i can cross with 
+			we look at people who come after this person i (a person j where j > i) 
+		"""
+		for person in range(1, self.n+1): # exclude the flashlight - only traverse the peoples' locations
+			if state[person] == flashlightLocation: #This person can cross the bridge
+				action = [person] # This person can cross bridge on their own (with the flashlight)
+				possibleActions.append(action)
+				for person2 in range(person+1, self.n+1):
+					if state[person2] == flashlightLocation:  # This person (person2) can cross the bridge
+						action = [person, person2] # person can cross the bridge with person2 (and the flashlight)
+						possibleActions.append(action)
+
+		return possibleActions
+
+
+	def result(self, state, action):
+		pass
+
+
+	def goal_test(self, state):
+		"""
+			Return True if state is the Goal State
+
+			I'm overriding this function as the super function (defined in Problem) first checks if the
+			self.goal is a list (of states) and if so, checks if the state passed in is an element of this list,
+			however this Dangerous Crossing Problem defines a state as a list (and there is only 1 Goal State)
+			so this check will	result in a logical error, thus we need to exclude it and just compare the state
+			passed in (a list) to the Goal State (a list)
+
+		:param state: a State in the Search Space
+		:return: True if state is the Goal State otherwise False
+		"""
+
+		return self.goal == state
+
+	def value(self, state):
+		pass
+
 
 
 # ==============================================================================
@@ -286,5 +364,10 @@ def main():
 
 
 	print("hello world")
+	l1 = [0, 1,2,3,4,5]
+
+	p = DangerousCrossing(4,[1,2,5,8],15)
+	print(p.actions(p.initial))
+
 
 main()
