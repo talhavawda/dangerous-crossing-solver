@@ -127,6 +127,7 @@ class Problem:
 # =============================================================================
 
 
+
 class Node:
 	"""A node in a search tree. Contains a pointer to the parent (the node
 	that this is a successor of) and to the actual state for this node. Note
@@ -136,6 +137,8 @@ class Node:
 	may add an f and h value; see best_first_graph_search and astar_search for
 	an explanation of how the f and h values are handled. You will not need to
 	subclass this class."""
+
+	nodesExpanded: int = 0
 
 	def __init__(self, state, parent=None, action=None, path_cost=0):
 		"""Create a search tree Node, derived from a parent by an action."""
@@ -155,8 +158,21 @@ class Node:
 
 	def expand(self, problem):
 		"""List the nodes reachable in one step from this node."""
-		return [self.child_node(problem, action)
-				for action in problem.actions(self.state)]
+
+		childNodes = []
+
+		for action in problem.actions(self.state):
+			childNode = self.child_node(problem, action)
+			#print(problem.mimimumTime)
+			#if childNode.path_cost <= int(problem.mimimumTime):
+			childNodes.append(childNode)
+			Node.nodesExpanded += 1
+
+		return childNodes
+
+		#return [self.child_node(problem, action)
+		#		for action in problem.actions(self.state)]
+
 
 	def child_node(self, problem, action):
 		"""[Figure 3.10]"""
@@ -356,6 +372,7 @@ def astar_search(problem, h=None, display=False):
 # ==============================================================================
 # ==============================================================================
 # ==============================================================================
+
 
 
 class DangerousCrossing(Problem):
@@ -660,10 +677,41 @@ class DangerousCrossing(Problem):
 		"""
 			The Heuristic Function for this Dangerous Crossing Problem
 
+			Remember that the Path Cost is the time that has elapsed since the people started crossing the bridge
+			till where they (and the flashlight) are currently located
+
+			This heuristic is admissible as it never overestimates the cost from this node to the goal node
+
+
 			:param node:
 			:return:
 		"""
 		state = node.state
+
+		ctStillToCross = [] # A list where each element is the crossing time of each person who is on the LEFT and needs to cross to the RIGHT
+
+		for i in range(1, self.n+1):
+			if state[i] == DangerousCrossing.LEFT: # if Person i is on the LEFT
+				ctStillToCross.append(self.crossingTime[i])
+
+		estimatedCostToGoal = 0
+
+		# ctStillToCross will be in asc. order as crossingTime is in asc Order
+
+		ctStillToCross.sort(reverse=True) # sort in desc. order
+
+		for i in range(0, len(ctStillToCross), 2):
+			# 2 people can cross at a time, and the time it takes for 2 people to cross is the crossing time of the slower person
+				# Thus I set step=2 as getting max crossing time of person i and person i+1
+			if i == len(ctStillToCross) - 1:
+				# For when there is an odd number of people who still have to cross
+				# there will be 1 person remaining (the last person) who has to cross on their own
+					estimatedCostToGoal += ctStillToCross[i]
+			else:
+				estimatedCostToGoal += max(ctStillToCross[i], ctStillToCross[i+1])
+
+		return estimatedCostToGoal
+
 
 # ==============================================================================
 
@@ -673,6 +721,52 @@ DFS = 1		# Depth-First Search
 BFS = 2		# Breadth-First Search
 GBFS = 3	# Greedy Best-First Search
 ASS = 4		# A-Star Search
+
+
+def stateToString(node: Node, problem):
+	left = ""
+	right = ""
+
+	state = node.state
+
+	for person in range(1, len(state)):
+		if state[person] == DangerousCrossing.LEFT:
+			left += str(person) + " "
+			right += "  "
+		elif state[person] == DangerousCrossing.RIGHT:
+			right += str(person) + " "
+			left += "  "
+
+	sideMovedTo = state[0]
+
+	sideMovedToString = ""
+	if sideMovedTo == DangerousCrossing.LEFT:
+		sideMovedToString = "LEFT"
+	elif sideMovedTo == DangerousCrossing.RIGHT:
+		sideMovedToString = "RIGHT"
+
+	action = ""
+
+	if state != problem.initial:
+		action = "\t\t Action: Person(s) " + str(node.action) + " crossed to the " + str(sideMovedToString)
+
+	return left + " --<bridge>-- " + str(right) + action
+
+def headerString(n):
+	headerString = "\t\t    "
+	spacesToAdd = (n - 3) * 2 - 1
+
+
+	spaces = ""
+	for i in range(spacesToAdd):
+		headerString = " " + headerString
+
+	if n % 2 == 0:
+		headerString += "LEFT  --<bridge>--  RIGHT"
+	else:
+		headerString += "LEFT    --<bridge>--   RIGHT"
+
+	return headerString
 
 
 def solveDangerousCrossing(problem: DangerousCrossing, searchAlgo: int):
@@ -687,41 +781,86 @@ def solveDangerousCrossing(problem: DangerousCrossing, searchAlgo: int):
 	print("===============================================")
 	print("\nSolving the Dangerous Crossing Problem: ")
 	print("\t Problem Instance:")
-	print("\t\t Crossing Time (in minutes) of the ", problem.n, " people: ", problem.crossingTime)
-	print("\t\t Minimum Time (in minutes) for all to cross: ", problem.mimimumTime)
-	print()
+	print("\t\tThere are", problem.n, "People crossing from the LEFT side of the bridge to the RIGHT side")
+
+	print("\t\tCrossing Time (in minutes) of the ", problem.n, " people: ",)
+	for person in range(1, problem.n+1):
+		print("\t\t\tPerson", person, ":", problem.crossingTime[person])
+
+	print("\n\t\tMinimum Time (in minutes) for all", problem.n, "People to cross:", problem.mimimumTime)
+	print("\n---------------------------\n")
 
 	solutionNode: Node
-	f: int
 
 	if searchAlgo in [0, 1]:
 		print("\tSearch Algorithm: Depth-First Search")
+		Node.nodesExpanded = 0
 		solutionNode = depth_first_graph_search(problem)
 		solutionPath = solutionNode.path()
-		print("\t", solutionPath)
-		print()
+
+		print("\tSolution Path:")
+
+		print(headerString(problem.n))
+
+		for node in solutionPath:
+			state = stateToString(node, problem)
+			print("\t\t", state)
+
+		print("\nNumber of nodes this search algorithm expanded: ", solutionNode.nodesExpanded)
+		print("\n---------------------------\n")
 
 	if searchAlgo in [0, 2]:
 		print("\tSearch Algorithm: Breadth-First Search")
+		Node.nodesExpanded = 0
 		solutionNode = breadth_first_graph_search(problem)
 		solutionPath = solutionNode.path()
 
-		print("\t", solutionPath)
-		print()
+		print("\tSolution Path:")
+
+		print(headerString(problem.n))
+
+		for node in solutionPath:
+			state = stateToString(node, problem)
+			print("\t\t", state)
+
+		print("\nNumber of nodes this search algorithm expanded: ", solutionNode.nodesExpanded)
+		print("\n---------------------------\n")
 
 	if searchAlgo in [0, 3]:
 		print("\tSearch Algorithm: Greedy Best-First Search")
-		solutionNode = best_first_graph_search(problem, f)
+		Node.nodesExpanded = 0
+		solutionNode = best_first_graph_search(problem, problem.h) # f(n) = h(n)
 		solutionPath = solutionNode.path()
-		print("\t", solutionPath)
-		print()
+
+		print("\tSolution Path:")
+
+		print(headerString(problem.n))
+
+		for node in solutionPath:
+			state = stateToString(node, problem)
+			print("\t\t", state)
+
+		print("\nNumber of nodes this search algorithm expanded: ", solutionNode.nodesExpanded)
+		print("\n---------------------------\n")
 
 	if searchAlgo in [0, 4]:
-		print("\tSearch Algorithm: A-Star Search")
-		solutionNode = best_first_graph_search(problem, f)
+		print("\tSearch Algorithm: A-Star Search\n")
+
+		#astar_search() calls best_first_graph_search() with f(n) = n.path_cost() + h(n) [where h(n) = problem.h()]
+		Node.nodesExpanded = 0
+		solutionNode = astar_search(problem, problem.h)
 		solutionPath = solutionNode.path()
-		print("\t", solutionPath)
-		print()
+
+		print("\tSolution Path:")
+
+		print(headerString(problem.n))
+
+		for node in solutionPath:
+			state = stateToString(node, problem)
+			print("\t\t", state)
+
+		print("\nNumber of nodes this search algorithm expanded: ", solutionNode.nodesExpanded)
+		print("\n---------------------------\n")
 
 
 
