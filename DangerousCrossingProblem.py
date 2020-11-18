@@ -431,12 +431,23 @@ class DangerousCrossing(Problem):
 		"""
 
 		# Specify Initial State and Goal State
+
 		initial = []
 		goal = []
 
 		for i in range(n+1): # i traverses {0, ..., n}
 			initial.append(DangerousCrossing.LEFT)
 			goal.append(DangerousCrossing.RIGHT)
+
+		"""
+			Representing a State as a tuple instead of a list as a list is unhashable and thus results in an error
+			when adding it to the explored set in the Search Algorithms.
+			However we first need to have it as a list first to add the people to them as a tuple is immutable.
+			
+			There is just a minor difference form a list and tuple
+		"""
+		initial = tuple(initial)
+		goal = tuple(goal)
 
 		# Call super constructor
 		super().__init__(initial, goal)
@@ -470,7 +481,7 @@ class DangerousCrossing(Problem):
 
 			Thus the list of actions that is returned is a list of lists (each action is a list)
 
-			:param state: a State in the State Space, a list of integer bits (of size n+1)
+			:param state: a State in the State Space, a list/tuple of integer bits (of size n+1)
 							representing the location of the n people and the flashlight
 			:return: a list of actions that can be executed/performed on this state
 		"""
@@ -503,7 +514,7 @@ class DangerousCrossing(Problem):
 		return possibleActions
 
 
-	def result(self, state: list, action: list):
+	def result(self, state, action: list):
 		"""
 			Implmenting this abstract method from the superclass Problem
 
@@ -524,6 +535,8 @@ class DangerousCrossing(Problem):
 		"""
 
 		# Initialise resultState
+		state = list(state) #convert the State (a tuple) to a list so that we can copy it to make resultState
+		# Have resultState initially as a list so we can modify its elements
 		resultState = state.copy() # a list of n+1 integer elements (elements = {LEFT, RIGHT})
 
 		flashlightLocation = state[0]
@@ -542,6 +555,7 @@ class DangerousCrossing(Problem):
 		for person in action:
 			resultState[person] = moveToSide
 
+		resultState = tuple(resultState)
 		return resultState
 
 
@@ -642,6 +656,15 @@ class DangerousCrossing(Problem):
 		return self.goal == state
 
 
+	def h(self, node: Node):
+		"""
+			The Heuristic Function for this Dangerous Crossing Problem
+
+			:param node:
+			:return:
+		"""
+		state = node.state
+
 # ==============================================================================
 
 # 'Constants' representing which Search Algorithm is to be used to Solve the Dangerous Crossing Problem
@@ -668,10 +691,37 @@ def solveDangerousCrossing(problem: DangerousCrossing, searchAlgo: int):
 	print("\t\t Minimum Time (in minutes) for all to cross: ", problem.mimimumTime)
 	print()
 
-	if searchAlgo == 1:
+	solutionNode: Node
+	f: int
+
+	if searchAlgo in [0, 1]:
+		print("\tSearch Algorithm: Depth-First Search")
 		solutionNode = depth_first_graph_search(problem)
 		solutionPath = solutionNode.path()
-		print(solutionPath)
+		print("\t", solutionPath)
+		print()
+
+	if searchAlgo in [0, 2]:
+		print("\tSearch Algorithm: Breadth-First Search")
+		solutionNode = breadth_first_graph_search(problem)
+		solutionPath = solutionNode.path()
+
+		print("\t", solutionPath)
+		print()
+
+	if searchAlgo in [0, 3]:
+		print("\tSearch Algorithm: Greedy Best-First Search")
+		solutionNode = best_first_graph_search(problem, f)
+		solutionPath = solutionNode.path()
+		print("\t", solutionPath)
+		print()
+
+	if searchAlgo in [0, 4]:
+		print("\tSearch Algorithm: A-Star Search")
+		solutionNode = best_first_graph_search(problem, f)
+		solutionPath = solutionNode.path()
+		print("\t", solutionPath)
+		print()
 
 
 
@@ -728,42 +778,5 @@ def main():
 
 
 	solveDangerousCrossing(problemInstance, searchAlgo)
-
-
-
-
-
-
-
-
-
-
-
-
-	print("hello world")
-	l1 = [0,1,2,3,4,5]
-	l2 = []
-	l2 = l1.copy()
-	l2[1] = 10
-	print(l1)
-	print(l2)
-
-	print()
-	print("test problem")
-
-	p = DangerousCrossing(4,[1,2,5,8],15)
-	#state = p.initial
-	state = [1,1,1,1,1]
-	actions = p.actions(state)
-	print("State:\t", state)
-
-	for action in actions:
-		print("action:\t\t", action)
-		print("Action cost:\t", p.action_cost(action))
-		print("new state:\t", p.result(state, action))
-		print()
-
-	#print(p.actions([0,0,1,0,1]))
-
 
 main()
