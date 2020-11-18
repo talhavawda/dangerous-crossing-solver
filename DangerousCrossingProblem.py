@@ -26,10 +26,12 @@
 
 """
 
+
 import sys
 from collections import deque
 import functools
 import heapq
+
 
 """
 	Helper Functions (from utils.py)
@@ -353,6 +355,7 @@ def astar_search(problem, h=None, display=False):
 
 # ==============================================================================
 # ==============================================================================
+# ==============================================================================
 
 
 class DangerousCrossing(Problem):
@@ -639,27 +642,102 @@ class DangerousCrossing(Problem):
 		return self.goal == state
 
 
+# ==============================================================================
 
-# ==============================================================================
-# ==============================================================================
-# ==============================================================================
+# 'Constants' representing which Search Algorithm is to be used to Solve the Dangerous Crossing Problem
+ALL = 0 	#Solving using all 4 below
+DFS = 1		# Depth-First Search
+BFS = 2		# Breadth-First Search
+GBFS = 3	# Greedy Best-First Search
+ASS = 4		# A-Star Search
+
+
+def solveDangerousCrossing(problem: DangerousCrossing, searchAlgo: int):
+	"""
+		Solve the Dangerous Crossing Problem
+
+		:param problem: An instance of the Dangerous Crossing Problem
+		:param searchAlgo: The search algorithm to use to solve the problem
+		:return: void (nothing)
+	"""
+
+	print("===============================================")
+	print("\nSolving the Dangerous Crossing Problem: ")
+	print("\t Problem Instance:")
+	print("\t\t Crossing Time (in minutes) of the ", problem.n, " people: ", problem.crossingTime)
+	print("\t\t Minimum Time (in minutes) for all to cross: ", problem.mimimumTime)
+	print()
+
+	if searchAlgo == 1:
+		solutionNode = depth_first_graph_search(problem)
+		solutionPath = solutionNode.path()
+		print(solutionPath)
+
 
 
 def main():
 	# n ->  number of people who wish to cross the bridge
-	# Set default of n to 4 (gets applied when the user enters a non-digit)
+	# Set default of n to 4 (gets applied if the user enters an invalid entry (a non-digit) )
 	n = 4
 
 	userN = input("Please enter the number of people who wish to cross the bridge: ")
 
 	if userN.isdigit():
-		n = userN
+		n = int(userN)
 
-	userSS = input("Please select the Search Strategy you wish to solve the problem with:\n"
-				   "\t1. Depth-First Search\n"
-				   "\t2. Breadth-First Search\n"
-				   "\t3. Greedy Best-First Search\n"
-				   "\t4. A-Star Search\n")
+	crossingTime = []
+
+	for person in range(1, n+1):
+		while(True): # Repeat until the user enters a valid time (a digit) for Person i
+			userCT = input("Please enter the Crossing Time (in minutes) of Person " + str(person) + ": ")
+			if userCT.isdigit():
+				ct = int(userCT)
+				crossingTime.append(ct)
+				break
+
+	minimumPossibleTime: int
+
+	while(True):
+		userMPT= input("Please enter the Minimum Time it takes for the " + str(n) + " people to cross the bridge: ")
+
+		if userMPT.isdigit():
+			minimumPossibleTime = userMPT
+			break
+
+
+	problemInstance = DangerousCrossing(n, crossingTime, minimumPossibleTime)
+
+
+	searchAlgo: int
+
+	while(True):
+
+		userSS = input("Please select the Search Strategy you wish to solve the problem with:\n"
+					   "\n(Enter the number of the Search Strategy Algorithm)\n"
+					   "\t0. Solve using ALL the Search Algorithms below\n"
+					   "\t1. Depth-First Search\n"
+					   "\t2. Breadth-First Search\n"
+					   "\t3. Greedy Best-First Search\n"
+					   "\t4. A-Star Search\n")
+
+		if userSS.isdigit():
+			searchAlgo = int(userSS)
+
+			if searchAlgo >= 0 and searchAlgo <= 4: # If Valid Search Number
+				break
+
+
+	solveDangerousCrossing(problemInstance, searchAlgo)
+
+
+
+
+
+
+
+
+
+
 
 
 	print("hello world")
