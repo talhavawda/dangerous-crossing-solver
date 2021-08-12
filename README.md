@@ -1,5 +1,8 @@
-# DangerousCrossingProblem
+# A Dangerous Crossing Problem solver
 
-## COMP304(Artificial Intelligence) Assignment 1
+COMP304(Artificial Intelligence) 2020 - Assignment 1
 
-Specifying the Dangerous Crossing Problem using Problem Formualtion and using Search Strategies to find a solution path, and evaluating the performance of the Search Strategies used 
+## A Python console-based application that solves the Dangerous Crossing Problem
+- The Problem is specified using Problem Formualation
+- Various structured and admissible heuristic search AI algorithms are used to find a solution path
+- The performance of the search strategies that were used are evaluated and compared
