@@ -1,6 +1,6 @@
 # A Dangerous Crossing Problem solver
 
-COMP304(Artificial Intelligence) 2020 - Assignment 1
+COMP304 (Artificial Intelligence) 2020 - Assignment 1
 
 ## A Python console-based application that solves the Dangerous Crossing Problem
 - The Problem is specified using Problem Formualation
